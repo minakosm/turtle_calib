@@ -223,7 +223,7 @@ Eigen::MatrixXf get_transformation_matrix(std::string filename){
                       *Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
 
     transformation_matrix.resize(4,4);
-    transformation_matrix << rotation_matrix.inverse(), -translation_vector,
+    transformation_matrix << rotation_matrix, translation_vector,
                              Eigen::Matrix<float, 1, 3>::Zero(), 1;
 
     return transformation_matrix;
@@ -283,8 +283,11 @@ Eigen::MatrixXf get_pixel_points(Eigen::MatrixXf camera_3d_points, Eigen::Matrix
 
     Eigen::MatrixXf pixel_homeogenous_points;
 
-    opencv_rotation = Eigen::AngleAxisf(PI/2,Eigen::Vector3f::UnitY())
-                     *Eigen::AngleAxisf(-PI/2,Eigen::Vector3f::UnitZ());
+    // opencv_rotation = Eigen::AngleAxisf(PI/2,Eigen::Vector3f::UnitY())
+    //                  *Eigen::AngleAxisf(-PI/2,Eigen::Vector3f::UnitZ());
+
+    opencv_rotation = Eigen::AngleAxisf(0,Eigen::Vector3f::UnitY())
+                     *Eigen::AngleAxisf(0,Eigen::Vector3f::UnitZ());
 
     opencv_transformation_matrix.resize(3,4);
     opencv_transformation_matrix << opencv_rotation.inverse(), Eigen::Vector3f::Zero();
@@ -419,8 +422,6 @@ int main(int argc, char* argv[]){
         default:
             break;
         }
-
-
 
         image_processing(image_filename, pixel_points);
     }
