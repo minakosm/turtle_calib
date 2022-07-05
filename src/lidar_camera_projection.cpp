@@ -53,8 +53,8 @@ Eigen::Matrix3f intrinsic_K;                // Camera Matrix
 Eigen::Matrix<float, 1, 5> intrinsic_D;      // Distortion Coefficients
 
 int camera_index;                           // Camera enum (0:left, 1:center, 2:right)
-enum scenery{chessboard, cones};           // Scenery enumerator : chessboard = 0, cones = 1
-scenery scene = chessboard;
+enum scenery{chessboard, cones, fusion};           // Scenery enumerator : chessboard = 0, cones = 1
+scenery scene = fusion;
 /**
  * @brief Get the pointcloud2 msg from rosbag object
  * 
@@ -64,7 +64,12 @@ scenery scene = chessboard;
 sensor_msgs::msg::PointCloud2 get_pcl_from_rosbag(std::string filename){
     rosbag2_storage::StorageOptions storage_options;
 
-    if(filename == "lidar_bag_cones"){scene = cones;}
+    if(filename == "lidar_bag_cones")
+    {    scene = cones;
+    
+    } else if(filename == "fusion_bag"){
+        scene = fusion;
+    }
     std::string rosbag_filename = ament_index_cpp::get_package_share_directory("turtle_calibration");
     rosbag_filename = rosbag_filename +"/rosbags/" + filename;
     storage_options.uri = rosbag_filename;
@@ -359,7 +364,7 @@ void image_processing(std::string image_filename,Eigen::MatrixXf pixel_points){;
     center.y = img.rows/2;
     center.x = img.cols/2;
 
-    // px = set_pixel_pionts(pixel_points, intrinsic_D, center);
+    px = set_pixel_pionts(pixel_points, intrinsic_D, center);
 
     for(int i=0; i<px.size(); i++){
         px[i].x = pixel_points(0,i);
@@ -419,7 +424,9 @@ int main(int argc, char* argv[]){
             break;
         case 1:
             image_filename = image_filename + "/images/image_cones" + std::to_string(camera_index) + ".jpg";
+            break;
         default:
+            image_filename = image_filename + "/images/image_fusion" + std::to_string(camera_index) + ".jpg";
             break;
         }
 
