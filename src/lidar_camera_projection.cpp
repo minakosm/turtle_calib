@@ -53,8 +53,8 @@ Eigen::Matrix3f intrinsic_K;                // Camera Matrix
 Eigen::Matrix<float, 1, 5> intrinsic_D;      // Distortion Coefficients
 
 int camera_index;                           // Camera enum (0:left, 1:center, 2:right)
-enum scenery{chessboard, cones, fusion};           // Scenery enumerator : chessboard = 0, cones = 1
-scenery scene = fusion;
+enum scenery{chessboard, cones, center_fusion, fusion};           // Scenery enumerator : chessboard = 0, cones = 1
+scenery scene = chessboard;
 /**
  * @brief Get the pointcloud2 msg from rosbag object
  * 
@@ -64,11 +64,21 @@ scenery scene = fusion;
 sensor_msgs::msg::PointCloud2 get_pcl_from_rosbag(std::string filename){
     rosbag2_storage::StorageOptions storage_options;
 
-    if(filename == "lidar_bag_cones")
-    {    scene = cones;
+    // if(filename == "lidar_bag_cones")
+    // {    scene = cones;
     
-    } else if(filename == "fusion_bag"){
+    // } else if(filename == "fusion_bag"){
+    //     scene = fusion;
+    // } else if(filename == "center_fusion"){
+    //     scene = center_fusion;
+    // }
+
+    if(filename == "lidar_bag_cones"){
+        scene = cones;
+    }else if(filename == "fusion_bag"){
         scene = fusion;
+    }else if(filename == "center_fusion"){
+        scene = center_fusion;
     }
     std::string rosbag_filename = ament_index_cpp::get_package_share_directory("turtle_calibration");
     rosbag_filename = rosbag_filename +"/rosbags/" + filename;
@@ -230,6 +240,12 @@ Eigen::MatrixXf get_transformation_matrix(std::string filename){
     transformation_matrix.resize(4,4);
     transformation_matrix << rotation_matrix, translation_vector,
                              Eigen::Matrix<float, 1, 3>::Zero(), 1;
+
+
+    // transformation_matrix << 0.00513168, -0.999857, 0.016079, -0.0121403,
+    //                          -0.242234, -0.0168433, -0.970071, -0.0280563,
+    //                          0.970205, 0.00108329, -0.242286, 1.01903,
+    //                          0, 0, 0, 1;
 
     return transformation_matrix;
 }
@@ -408,29 +424,30 @@ int main(int argc, char* argv[]){
 
     auto lidar_points = get_lidar_XYZ_intensities(pcl_msg);
     
-    for(camera_index=0; camera_index<CAMERA_N; camera_index++){
-    
-        auto intrinsic_params = read_intrinsic_params(camera_index);
-        auto camera_points = get_camera_3d_points(lidar_xyz);  
+    camera_index = 1;
+    auto intrinsic_params = read_intrinsic_params(camera_index);
+    auto camera_points = get_camera_3d_points(lidar_xyz);  
 
-        auto pixel_points = get_pixel_points(camera_points, intrinsic_params.first);       
+    auto pixel_points = get_pixel_points(camera_points, intrinsic_params.first);       
 
-        std::string image_filename = ament_index_cpp::get_package_share_directory("turtle_calibration");
+    std::string image_filename = ament_index_cpp::get_package_share_directory("turtle_calibration");
 
-        switch (scene)
-        {
-        case 0:
-            image_filename = image_filename + "/images/image_chessboard" + std::to_string(camera_index) + ".jpg";
-            break;
-        case 1:
-            image_filename = image_filename + "/images/image_cones" + std::to_string(camera_index) + ".jpg";
-            break;
-        default:
-            image_filename = image_filename + "/images/image_fusion" + std::to_string(camera_index) + ".jpg";
-            break;
-        }
-
-        image_processing(image_filename, pixel_points);
+    switch (scene)
+    {
+    case 0:
+        image_filename = image_filename + "/images/image_chessboard" + std::to_string(camera_index) + ".jpg";
+        break;
+    case 1:
+        image_filename = image_filename + "/images/image_cones" + std::to_string(camera_index) + ".jpg";
+        break;
+    case 2:
+        image_filename = image_filename + "/images/center_fusion" + std::to_string(camera_index) + ".jpg";
+        break;
+    default:
+        image_filename = image_filename + "/images/image_fusion" + std::to_string(camera_index) + ".jpg";
+        break;
     }
+
+    image_processing(image_filename, pixel_points);
     return 0;
 }
